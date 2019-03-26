@@ -109,10 +109,14 @@ export class RebaseFlow extends React.Component<
       progress: {
         value: 0,
         count: 0,
-        total: 0,
+        commits: [],
       },
       userHasResolvedConflicts: false,
       rebaseStatus: null,
+    }
+
+    if (this.state.step.kind === RebaseStep.ShowConflicts) {
+      // TODO: we need a way to set the progress based on an in-flight rebase
     }
   }
 
@@ -223,9 +227,16 @@ export class RebaseFlow extends React.Component<
   }
 
   private updateProgress = (progress: IRebaseProgress) => {
-    this.setState({
-      progress,
-    })
+    const { count, value, commitSummary } = progress
+
+    this.setState(prevState => ({
+      progress: {
+        ...prevState.progress,
+        count,
+        value,
+        currentCommitSummary: commitSummary,
+      },
+    }))
   }
 
   private moveToCompletedState = () => {
@@ -233,7 +244,7 @@ export class RebaseFlow extends React.Component<
     // detects and handles the state transition after a period of time to ensure
     // the UI shows _something_ before closing the dialog
     this.setState(prevState => {
-      let commitSummary: string | undefined = undefined
+      let currentCommitSummary: string | undefined = undefined
 
       const { rebaseStatus } = prevState
 
@@ -242,16 +253,16 @@ export class RebaseFlow extends React.Component<
         rebaseStatus.kind === ComputedActionKind.Clean
       ) {
         const { commits } = rebaseStatus
-        commitSummary = commits[commits.length - 1].summary
+        currentCommitSummary = commits[commits.length - 1].summary
       }
 
-      const { total } = prevState.progress
+      const { commits } = prevState.progress
       return {
         progress: {
+          ...prevState.progress,
           value: 1,
-          commitSummary,
-          count: total,
-          total,
+          currentCommitSummary,
+          count: commits.length,
         },
       }
     })
@@ -285,18 +296,26 @@ export class RebaseFlow extends React.Component<
       }
     }
 
-    this.setState(() => ({
-      step: {
-        kind: RebaseStep.ShowProgress,
-        onDidMount: startRebaseAction,
-      },
-      progress: {
-        value: 0,
-        count: 1,
-        commitSummary: commits[0].summary,
-        total,
-      },
-    }))
+    this.setState(() => {
+      const currentCommitSummary =
+        commits.length > 0 ? commits[0].summary : undefined
+
+      const newCount = 1
+      const newProgressValue = newCount / commits.length
+      const value = formatRebaseValue(newProgressValue)
+      return {
+        step: {
+          kind: RebaseStep.ShowProgress,
+          onDidMount: startRebaseAction,
+        },
+        progress: {
+          commits,
+          value,
+          count: newCount,
+          currentCommitSummary,
+        },
+      }
+    })
   }
 
   private onContinueRebase = async () => {
@@ -329,11 +348,14 @@ export class RebaseFlow extends React.Component<
     }
 
     this.setState(prevState => {
-      const { total, count } = prevState.progress
+      const { commits, count } = prevState.progress
 
       const newCount = count + 1
-      const newProgressValue = newCount / total
+      const newProgressValue = newCount / commits.length
       const value = formatRebaseValue(newProgressValue)
+
+      const currentCommitSummary =
+        newCount <= commits.length ? commits[newCount - 1].summary : undefined
 
       return {
         step: {
@@ -341,9 +363,10 @@ export class RebaseFlow extends React.Component<
           onDidMount: continueRebaseAction,
         },
         progress: {
+          commits,
           value,
           count: newCount,
-          total,
+          currentCommitSummary,
         },
       }
     })

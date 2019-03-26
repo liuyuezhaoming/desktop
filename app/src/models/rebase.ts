@@ -49,7 +49,7 @@ export type RebaseProgressSummary = {
   /** Track the current number of commits rebased across dialogs and states */
   readonly count: number
   /** Track the total number of commits to rebase across dialog and states */
-  readonly total: number
+  readonly commits: ReadonlyArray<Commit>
   /** The commit summary associated with the current commit (if known) */
-  readonly commitSummary?: string
+  readonly currentCommitSummary?: string
 }
