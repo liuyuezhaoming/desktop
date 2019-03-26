@@ -1,6 +1,7 @@
 /**
- * A state representing the app computing whether a planned action will require
- * further work by the user to complete.
+ * States representing an action being computed in the background on behalf of
+ * the user in the app to indicate whether additional work by the user to
+ * complete is needed.
  */
 export enum ComputedActionKind {
   /** The action is being computed in the background */
