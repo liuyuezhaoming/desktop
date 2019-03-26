@@ -4,8 +4,9 @@ import { assertNever } from '../../lib/fatal-error'
 import { timeout } from '../../lib/promise'
 import { getResolvedFiles } from '../../lib/status'
 import { formatRebaseValue } from '../../lib/rebase'
-import { RebaseResult } from '../../lib/git'
+import { RebaseResult, getCommits } from '../../lib/git'
 import { RebaseConflictState } from '../../lib/app-state'
+import { revRange } from '../../lib/git'
 
 import { Repository } from '../../models/repository'
 import { RebaseStep, RebaseFlowState } from '../../models/rebase-flow-state'
@@ -19,6 +20,10 @@ import { ChooseBranchDialog } from './choose-branch'
 import { ShowConflictedFilesDialog } from './show-conflicted-files-dialog'
 import { RebaseProgressDialog } from './progress-dialog'
 import { ConfirmAbortDialog } from './confirm-abort-dialog'
+import { Branch } from '../../models/branch'
+import { ComputedActionKind } from '../../models/action'
+import { RebasePreviewResult } from '../../models/rebase'
+import { Commit } from '../../models/commit'
 
 interface IRebaseFlowProps {
   /**
@@ -80,6 +85,8 @@ interface IRebaseFlowState {
   /** Progress information about the current rebase */
   readonly progress: RebaseProgressSummary
 
+  readonly rebaseStatus: RebasePreviewResult | null
+
   /**
    * Track whether the user has done work to resolve conflicts as part of this
    * rebase, as the component should confirm with the user that they wish to
@@ -105,6 +112,7 @@ export class RebaseFlow extends React.Component<
         total: 0,
       },
       userHasResolvedConflicts: false,
+      rebaseStatus: null,
     }
   }
 
@@ -169,6 +177,31 @@ export class RebaseFlow extends React.Component<
     }
   }
 
+  private testRebaseOperation = async (baseBranch: Branch) => {
+    const { step } = this.state
+    if (step.kind !== RebaseStep.ChooseBranch) {
+      log.warn(`[RebaseFlow] testRebaseOperation invoked but on the wrong step`)
+      return
+    }
+
+    const range = revRange(baseBranch.tip.sha, step.currentBranch.tip.sha)
+
+    this.setState(() => ({
+      rebaseStatus: {
+        kind: ComputedActionKind.Loading,
+      },
+    }))
+
+    const commits = await getCommits(this.props.repository, range, 9999)
+
+    this.setState(() => ({
+      rebaseStatus: {
+        kind: ComputedActionKind.Clean,
+        commits,
+      },
+    }))
+  }
+
   private moveToShowConflictedFileState = () => {
     const { workingDirectory, conflictState } = this.props
 
@@ -200,10 +233,23 @@ export class RebaseFlow extends React.Component<
     // detects and handles the state transition after a period of time to ensure
     // the UI shows _something_ before closing the dialog
     this.setState(prevState => {
+      let commitSummary: string | undefined = undefined
+
+      const { rebaseStatus } = prevState
+
+      if (
+        rebaseStatus !== null &&
+        rebaseStatus.kind === ComputedActionKind.Clean
+      ) {
+        const { commits } = rebaseStatus
+        commitSummary = commits[commits.length - 1].summary
+      }
+
       const { total } = prevState.progress
       return {
         progress: {
           value: 1,
+          commitSummary,
           count: total,
           total,
         },
@@ -214,11 +260,13 @@ export class RebaseFlow extends React.Component<
   private onStartRebase = (
     baseBranch: string,
     targetBranch: string,
-    total: number
+    commits: ReadonlyArray<Commit>
   ) => {
     if (this.state.step.kind !== RebaseStep.ChooseBranch) {
       throw new Error(`Invalid step to start rebase: ${this.state.step.kind}`)
     }
+
+    const total = commits.length
 
     const startRebaseAction = async () => {
       const result = await this.props.dispatcher.rebase(
@@ -245,6 +293,7 @@ export class RebaseFlow extends React.Component<
       progress: {
         value: 0,
         count: 1,
+        commitSummary: commits[0].summary,
         total,
       },
     }))
@@ -373,6 +422,8 @@ export class RebaseFlow extends React.Component<
             initialBranch={initialBranch}
             onDismissed={onFlowEnded}
             onStartRebase={this.onStartRebase}
+            onBranchChanged={this.testRebaseOperation}
+            rebasePreviewStatus={this.state.rebaseStatus}
           />
         )
       }
