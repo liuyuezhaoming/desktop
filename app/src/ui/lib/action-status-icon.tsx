@@ -18,10 +18,7 @@ interface IActionStatusIconProps {
 }
 
 /** An indicator to display representing the result of a computed action */
-export class ActionStatusIcon extends React.Component<
-  IActionStatusIconProps,
-  {}
-> {
+export class ActionStatusIcon extends React.Component<IActionStatusIconProps> {
   public render() {
     const { status, classNamePrefix } = this.props
     if (status === null) {
