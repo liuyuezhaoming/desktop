@@ -3,7 +3,7 @@ import * as React from 'react'
 import { Branch } from '../../models/branch'
 import { Repository } from '../../models/repository'
 import { RebasePreviewResult } from '../../models/rebase'
-import { ComputedActionKind } from '../../models/action'
+import { ComputedAction } from '../../models/computed-action'
 import { Commit } from '../../models/commit'
 
 import { IMatches } from '../../lib/fuzzy-find'
@@ -212,10 +212,10 @@ export class ChooseBranchDialog extends React.Component<
     baseBranch: Branch,
     rebaseStatus: RebasePreviewResult
   ) {
-    if (rebaseStatus.kind === ComputedActionKind.Loading) {
+    if (rebaseStatus.kind === ComputedAction.Loading) {
       return this.renderLoadingRebaseMessage()
     }
-    if (rebaseStatus.kind === ComputedActionKind.Clean) {
+    if (rebaseStatus.kind === ComputedAction.Clean) {
       return this.renderCleanRebaseMessage(
         currentBranch,
         baseBranch,
@@ -267,7 +267,7 @@ export class ChooseBranchDialog extends React.Component<
 
     if (
       rebasePreviewStatus === null ||
-      rebasePreviewStatus.kind !== ComputedActionKind.Clean
+      rebasePreviewStatus.kind !== ComputedAction.Clean
     ) {
       return
     }

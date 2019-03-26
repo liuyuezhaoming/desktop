@@ -21,7 +21,7 @@ import { ShowConflictedFilesDialog } from './show-conflicted-files-dialog'
 import { RebaseProgressDialog } from './progress-dialog'
 import { ConfirmAbortDialog } from './confirm-abort-dialog'
 import { Branch } from '../../models/branch'
-import { ComputedActionKind } from '../../models/action'
+import { ComputedAction } from '../../models/computed-action'
 import { RebasePreviewResult } from '../../models/rebase'
 import { Commit } from '../../models/commit'
 
@@ -192,7 +192,7 @@ export class RebaseFlow extends React.Component<
 
     this.setState(() => ({
       rebaseStatus: {
-        kind: ComputedActionKind.Loading,
+        kind: ComputedAction.Loading,
       },
     }))
 
@@ -200,7 +200,7 @@ export class RebaseFlow extends React.Component<
 
     this.setState(() => ({
       rebaseStatus: {
-        kind: ComputedActionKind.Clean,
+        kind: ComputedAction.Clean,
         commits,
       },
     }))
@@ -248,10 +248,7 @@ export class RebaseFlow extends React.Component<
 
       const { rebaseStatus } = prevState
 
-      if (
-        rebaseStatus !== null &&
-        rebaseStatus.kind === ComputedActionKind.Clean
-      ) {
+      if (rebaseStatus !== null && rebaseStatus.kind === ComputedAction.Clean) {
         const { commits } = rebaseStatus
         currentCommitSummary = commits[commits.length - 1].summary
       }

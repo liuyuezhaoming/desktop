@@ -2,13 +2,13 @@ import * as React from 'react'
 import * as classNames from 'classnames'
 import { assertNever } from '../../lib/fatal-error'
 
-import { ComputedActionKind } from '../../models/action'
+import { ComputedAction } from '../../models/computed-action'
 
 import { Octicon, OcticonSymbol } from '../octicons'
 
 interface IActionStatusIconProps {
   /** The status to display to the user */
-  readonly status: { kind: ComputedActionKind } | null
+  readonly status: { kind: ComputedAction } | null
 
   /** A required class name prefix for the Octicon component */
   readonly classNamePrefix: string
@@ -44,15 +44,15 @@ export class ActionStatusIcon extends React.Component<IActionStatusIconProps> {
   }
 }
 
-function getSymbolForState(status: ComputedActionKind): OcticonSymbol {
+function getSymbolForState(status: ComputedAction): OcticonSymbol {
   switch (status) {
-    case ComputedActionKind.Loading:
+    case ComputedAction.Loading:
       return OcticonSymbol.primitiveDot
-    case ComputedActionKind.Conflicts:
+    case ComputedAction.Conflicts:
       return OcticonSymbol.alert
-    case ComputedActionKind.Invalid:
+    case ComputedAction.Invalid:
       return OcticonSymbol.x
-    case ComputedActionKind.Clean:
+    case ComputedAction.Clean:
       return OcticonSymbol.check
   }
 

@@ -1,5 +1,5 @@
 import { IRebaseProgress } from './progress'
-import { ComputedActionKind } from './action'
+import { ComputedAction } from './computed-action'
 import { Commit } from './commit'
 
 export type RebaseContext = {
@@ -21,20 +21,20 @@ export type RebaseProgressOptions = {
 }
 
 export type RebaseSuccess = {
-  readonly kind: ComputedActionKind.Clean
+  readonly kind: ComputedAction.Clean
   readonly commits: ReadonlyArray<Commit>
 }
 
 export type RebaseConflicts = {
-  readonly kind: ComputedActionKind.Conflicts
+  readonly kind: ComputedAction.Conflicts
 }
 
 export type RebaseUnsupported = {
-  readonly kind: ComputedActionKind.Invalid
+  readonly kind: ComputedAction.Invalid
 }
 
 export type RebaseLoading = {
-  readonly kind: ComputedActionKind.Loading
+  readonly kind: ComputedAction.Loading
 }
 
 export type RebasePreviewResult =
