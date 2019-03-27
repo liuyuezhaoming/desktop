@@ -13,6 +13,10 @@ import { RebaseStep, RebaseFlowState } from '../../models/rebase-flow-state'
 import { RebaseProgressSummary } from '../../models/rebase'
 import { IRebaseProgress } from '../../models/progress'
 import { WorkingDirectoryStatus } from '../../models/status'
+import { Branch } from '../../models/branch'
+import { ComputedAction } from '../../models/computed-action'
+import { RebasePreview } from '../../models/rebase'
+import { Commit } from '../../models/commit'
 
 import { Dispatcher } from '../dispatcher'
 
@@ -20,10 +24,6 @@ import { ChooseBranchDialog } from './choose-branch'
 import { ShowConflictedFilesDialog } from './show-conflicted-files-dialog'
 import { RebaseProgressDialog } from './progress-dialog'
 import { ConfirmAbortDialog } from './confirm-abort-dialog'
-import { Branch } from '../../models/branch'
-import { ComputedAction } from '../../models/computed-action'
-import { RebasePreviewResult } from '../../models/rebase'
-import { Commit } from '../../models/commit'
 
 interface IRebaseFlowProps {
   /**
@@ -85,7 +85,11 @@ interface IRebaseFlowState {
   /** Progress information about the current rebase */
   readonly progress: RebaseProgressSummary
 
-  readonly rebaseStatus: RebasePreviewResult | null
+  /**
+   * A preview of the rebase, using the selected base branch to test whether the
+   * current branch may be cleanly applied.
+   */
+  readonly rebaseStatus: RebasePreview | null
 
   /**
    * Track whether the user has done work to resolve conflicts as part of this
