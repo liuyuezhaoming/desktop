@@ -4,9 +4,8 @@ import { assertNever } from '../../lib/fatal-error'
 import { timeout } from '../../lib/promise'
 import { getResolvedFiles } from '../../lib/status'
 import { formatRebaseValue } from '../../lib/rebase'
-import { RebaseResult, getCommits } from '../../lib/git'
+import { RebaseResult, getCommitsInRange } from '../../lib/git'
 import { RebaseConflictState } from '../../lib/app-state'
-import { revRange } from '../../lib/git'
 
 import { Repository } from '../../models/repository'
 import { RebaseStep, RebaseFlowState } from '../../models/rebase-flow-state'
@@ -16,7 +15,7 @@ import { WorkingDirectoryStatus } from '../../models/status'
 import { Branch } from '../../models/branch'
 import { ComputedAction } from '../../models/computed-action'
 import { RebasePreview } from '../../models/rebase'
-import { Commit } from '../../models/commit'
+import { CommitOneLine } from '../../models/commit'
 
 import { Dispatcher } from '../dispatcher'
 
@@ -119,8 +118,16 @@ export class RebaseFlow extends React.Component<
       rebaseStatus: null,
     }
 
-    if (this.state.step.kind === RebaseStep.ShowConflicts) {
-      // TODO: we need a way to set the progress based on an in-flight rebase
+    const { step } = this.state
+
+    if (
+      step.kind === RebaseStep.ShowConflicts &&
+      step.previousProgress !== null
+    ) {
+      this.state = {
+        ...this.state,
+        progress: step.previousProgress,
+      }
     }
   }
 
@@ -142,6 +149,7 @@ export class RebaseFlow extends React.Component<
             targetBranch,
             workingDirectory,
             manualResolutions,
+            previousProgress: null,
           },
         })
       } else if (this.state.progress.value >= 1) {
@@ -199,15 +207,13 @@ export class RebaseFlow extends React.Component<
         },
       }),
       async () => {
-        const range = revRange(baseBranch.tip.sha, step.currentBranch.tip.sha)
+        const commits = await getCommitsInRange(
+          this.props.repository,
+          baseBranch.tip.sha,
+          step.currentBranch.tip.sha
+        )
 
-        // TODO: where does this 9999 result come from? Is it an actual limit
-        //       or just a side-effect of how things are laid out in the
-        //        repository?
-
-        const commits = await getCommits(this.props.repository, range, 9999)
-
-        // TODO: in what situations might this not be possible to compite
+        // TODO: in what situations might this not be possible to compute
 
         // TODO: check if this is a fast-forward (i.e. the selected branch is
         //       a direct descendant of the base branch) because this is a
@@ -243,6 +249,7 @@ export class RebaseFlow extends React.Component<
         targetBranch,
         workingDirectory,
         manualResolutions,
+        previousProgress: null,
       },
     })
   }
@@ -289,7 +296,7 @@ export class RebaseFlow extends React.Component<
   private onStartRebase = (
     baseBranch: string,
     targetBranch: string,
-    commits: ReadonlyArray<Commit>
+    commits: ReadonlyArray<CommitOneLine>
   ) => {
     if (this.state.step.kind !== RebaseStep.ChooseBranch) {
       throw new Error(`Invalid step to start rebase: ${this.state.step.kind}`)

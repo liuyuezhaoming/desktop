@@ -1692,7 +1692,8 @@ export class AppStore extends TypedBaseStore<IAppState> {
       return
     }
 
-    const initialState = initializeRebaseFlowForConflictedRepository(
+    const initialState = await initializeRebaseFlowForConflictedRepository(
+      repository,
       conflictState
     )
 
