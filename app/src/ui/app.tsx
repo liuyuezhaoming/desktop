@@ -1630,7 +1630,7 @@ export class App extends React.Component<IAppProps, IAppState> {
     this.props.dispatcher.setBanner({
       type: BannerType.RebaseConflictsFound,
       targetBranch,
-      onOpenDialog: () => {
+      onOpenDialog: async () => {
         const { changesState } = this.props.repositoryStateManager.get(
           repository
         )
@@ -1642,7 +1642,8 @@ export class App extends React.Component<IAppProps, IAppState> {
           )
           return
         }
-        const initialState = initializeRebaseFlowForConflictedRepository(
+        const initialState = await initializeRebaseFlowForConflictedRepository(
+          repository,
           conflictState
         )
 
